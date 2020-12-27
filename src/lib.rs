@@ -73,7 +73,7 @@ impl Command {
         I: Iterator<Item = T>,
         T: Into<String>,
     {
-        let mut args: Vec<String> = iter.map(Into::into).collect();
+        let mut args: Vec<String> = iter.map(Into::into).filter(|a| !a.is_empty()).collect();
         let mut flags = HashSet::new();
 
         let mut subcommand_match = Box::new(None);
@@ -163,6 +163,14 @@ impl ParsedCommand {
         self.args.iter().map(|arg| arg.value.as_ref()).collect()
     }
 
+    pub fn rest<'a>(&self, raw: &'a str) -> &'a str {
+        if let Some(index) = raw.find(&self.command) {
+            &raw[(index + self.command.len())..]
+        } else {
+            raw
+        }
+    }
+
     pub fn subcommand(&self) -> Option<(&str, ParsedCommand)> {
         (*self.subcommand_match)
             .as_ref()
@@ -192,6 +200,19 @@ mod tests {
         assert!(!matches.has_flag("-spam"));
 
         assert_eq!(matches.args(), &["-spam", "bar", "-foo", "baz"]);
+    }
+
+    #[test]
+    fn whitespace() {
+        let matches = Command::new("/hello")
+            .arg("one", true)
+            .arg("two", true)
+            .parse("/hello   foo  bar");
+        assert!(matches.is_ok());
+        let matches = matches.unwrap();
+        assert_eq!(matches.arg("one").unwrap(), "foo");
+        assert_eq!(matches.arg("two").unwrap(), "bar");
+        assert_eq!(matches.rest("/hello   foo  bar"), "   foo  bar")
     }
 
     #[test]
