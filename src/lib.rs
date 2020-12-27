@@ -121,6 +121,7 @@ impl Command {
         }
 
         Ok(ParsedCommand {
+            command: self.name.clone(),
             flags,
             args: parsed_args,
             subcommand_match,
@@ -140,6 +141,7 @@ struct ParsedArg {
 
 #[derive(Debug, Clone)]
 pub struct ParsedCommand {
+    command: String,
     flags: HashSet<String>,
     args: Vec<ParsedArg>,
     subcommand_match: Box<Option<(String, ParsedCommand)>>,
@@ -165,6 +167,10 @@ impl ParsedCommand {
         (*self.subcommand_match)
             .as_ref()
             .map(|(name, cmd)| (name.as_ref(), cmd.clone()))
+    }
+
+    pub fn command(&self) -> &str {
+        &self.command
     }
 }
 
